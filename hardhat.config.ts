@@ -22,13 +22,25 @@ const config: HardhatUserConfig = {
     hardhat: {
       allowUnlimitedContractSize: true,
       forking: {
-        url: "https://l2-uniswap-v4-hook-sandbox-6tl5qq8i4d.t.conduit.xyz",
-        blockNumber: 125000,
+        url: "https://1rpc.io/scroll/sepolia",
+        blockNumber: 994816,
       },
     },
     uniswap: {
       chainId: 111,
       url: "https://l2-uniswap-v4-hook-sandbox-6tl5qq8i4d.t.conduit.xyz",
+    },
+    arbitrum_sepolia: {
+      chainId: 421614,
+      url: "https://sepolia-rollup.arbitrum.io/rpc",
+    },
+    scroll_sepolia: {
+      chainId: 534351,
+      url: "https://1rpc.io/scroll/sepolia",
+    },
+    mantle_test: {
+      chainId: 5001,
+      url: "https://rpc.testnet.mantle.xyz",
     },
   },
 };
