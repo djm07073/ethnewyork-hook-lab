@@ -1,6 +1,9 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
-
+import dotenv from "dotenv";
+import { ethers } from "hardhat";
+dotenv.config();
+const PK = process.env.PRIVATE_KEY!;
 const config: HardhatUserConfig = {
   solidity: {
     version: "0.8.20",
@@ -20,11 +23,14 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
+      accounts: [
+        { privateKey: PK, balance: "1000000000000000000000000000000000" },
+      ],
       allowUnlimitedContractSize: true,
-      forking: {
-        url: "https://1rpc.io/scroll/sepolia",
-        blockNumber: 994816,
-      },
+      // forking: {
+      //   url: "https://1rpc.io/scroll/sepolia",
+      //   blockNumber: 994816,
+      // },
     },
     uniswap: {
       chainId: 111,

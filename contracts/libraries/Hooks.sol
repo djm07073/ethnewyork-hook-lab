@@ -3,7 +3,6 @@ pragma solidity ^0.8.20;
 
 import {IHooks} from "../interfaces/IHooks.sol";
 import {FeeLibrary} from "../libraries/FeeLibrary.sol";
-import "hardhat/console.sol";
 
 /// @notice V4 decides whether to invoke specific hooks by inspecting the leading bits of the address that
 /// the hooks contract is deployed to.
@@ -47,30 +46,6 @@ library Hooks {
         IHooks self,
         Calls memory calls
     ) internal pure {
-        console.log(
-            calls.beforeInitialize, //true
-            shouldCallBeforeInitialize(self),
-            calls.afterInitialize, //false
-            shouldCallAfterInitialize(self)
-        );
-        console.log(
-            calls.beforeModifyPosition,
-            shouldCallBeforeModifyPosition(self),
-            calls.afterModifyPosition,
-            shouldCallAfterModifyPosition(self)
-        );
-        console.log(
-            calls.beforeSwap,
-            shouldCallBeforeSwap(self),
-            calls.afterSwap,
-            shouldCallAfterSwap(self)
-        );
-        console.log(
-            calls.beforeDonate,
-            shouldCallBeforeDonate(self),
-            calls.afterDonate,
-            shouldCallAfterDonate(self)
-        );
         if (
             calls.beforeInitialize != shouldCallBeforeInitialize(self) ||
             calls.afterInitialize != shouldCallAfterInitialize(self) ||

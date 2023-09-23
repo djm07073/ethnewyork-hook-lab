@@ -16,25 +16,24 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {FullMath} from "../libraries/FullMath.sol";
 import {FixedPoint96} from "../libraries/FixedPoint96.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {IToasterHook} from "../interfaces/IToasterHook.sol";
-import {ToasterERC1155} from "../token/ToasterERC1155.sol";
+import {ILSBHook} from "../interfaces/ILSBHook.sol";
+import {LSBERC1155} from "../token/LSBERC1155.sol";
 import {LiquidityAmounts} from "../libraries/LiquidityAmounts.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import "hardhat/console.sol";
 
 /**
- * @title ToasterHook
+ * @title LSBHook
  * @author Toaster Finance
  * @notice Toaster Finance for Rebalancing & Block Liquidity Snipping
  */
-contract ToasterHook is BaseHook, ILockCallback, IToasterHook, Ownable {
-    // using ToasterRebalance for IPoolManager;
+contract LSBHook is BaseHook, ILockCallback, ILSBHook {
     using CurrencyLibrary for Currency;
     using BalanceDeltaLibrary for BalanceDelta;
     using PoolIdLibrary for PoolKey;
     using SafeCast for uint256;
     using SafeCast for uint128;
     string public uri;
-
+    address public owner;
     bytes internal constant ZERO_BYTES = bytes("");
     /// @dev Min tick for full range with tick spacing of 60
     int24 internal constant MIN_TICK = -887220;
@@ -49,8 +48,17 @@ contract ToasterHook is BaseHook, ILockCallback, IToasterHook, Ownable {
         if (deadline < block.timestamp) revert ExpiredPastDeadline();
         _;
     }
+    modifier onlyOwner() {
+        if (msg.sender != owner) revert NotOwner();
+        _;
+    }
 
-    constructor(IPoolManager _poolManager) BaseHook(_poolManager) Ownable() {}
+    constructor(
+        address _owner,
+        IPoolManager _poolManager
+    ) BaseHook(_poolManager) {
+        owner = _owner;
+    }
 
     function getHooksCalls() public pure override returns (Hooks.Calls memory) {
         return
@@ -59,7 +67,7 @@ contract ToasterHook is BaseHook, ILockCallback, IToasterHook, Ownable {
                 afterInitialize: false,
                 beforeModifyPosition: true,
                 afterModifyPosition: false,
-                beforeSwap: false,
+                beforeSwap: true,
                 afterSwap: false,
                 beforeDonate: false,
                 afterDonate: false
@@ -77,9 +85,11 @@ contract ToasterHook is BaseHook, ILockCallback, IToasterHook, Ownable {
             revert TickSpacingNotDefault();
 
         PoolId poolId = key.toId();
-        uint8 basicInterval = abi.decode(hookData, (uint8));
+
+        uint256 basicInterval = abi.decode(hookData, (uint256));
+
         address poolToken = address(
-            new ToasterERC1155(uri, basicInterval, key.tickSpacing, poolId)
+            new LSBERC1155(uri, basicInterval, key.tickSpacing, poolId)
         );
 
         poolInfo[poolId] = PoolInfo({
@@ -131,7 +141,7 @@ contract ToasterHook is BaseHook, ILockCallback, IToasterHook, Ownable {
 
         PoolId poolId = key.toId();
 
-        (uint160 sqrtPriceX96, , , , , ) = poolManager.getSlot0(poolId);
+        (uint160 sqrtPriceX96, , , ) = poolManager.getSlot0(poolId);
 
         if (sqrtPriceX96 == 0) revert PoolNotInitialized();
 
@@ -164,7 +174,7 @@ contract ToasterHook is BaseHook, ILockCallback, IToasterHook, Ownable {
             })
         );
 
-        ToasterERC1155(pool.liquidityToken).mint(
+        LSBERC1155(pool.liquidityToken).mint(
             params.to,
             params.tickLower,
             params.tickUpper,
@@ -196,7 +206,7 @@ contract ToasterHook is BaseHook, ILockCallback, IToasterHook, Ownable {
         PoolId poolId = key.toId();
 
         PoolInfo storage pool = poolInfo[poolId];
-        ToasterERC1155 toast = ToasterERC1155(pool.liquidityToken);
+        LSBERC1155 toast = LSBERC1155(pool.liquidityToken);
         (, int24 tickLower, int24 tickUpper) = toast.positions(params.tokenId);
         if (pool.liquidityToken == address(0)) revert PoolNotInitialized();
 
@@ -419,7 +429,7 @@ contract ToasterHook is BaseHook, ILockCallback, IToasterHook, Ownable {
                 tickLower,
                 tickUpper
             ),
-            ToasterERC1155(pool.liquidityToken).getSupply(tickLower, tickUpper)
+            LSBERC1155(pool.liquidityToken).getSupply(tickLower, tickUpper)
         );
 
         params.liquidityDelta = -(liquidityToRemove.toInt256());

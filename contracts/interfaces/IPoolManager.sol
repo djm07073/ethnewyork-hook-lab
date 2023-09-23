@@ -82,17 +82,9 @@ interface IPoolManager is IFees, IERC1155 {
         uint24 fee
     );
 
-    event ProtocolFeeUpdated(
-        PoolId indexed id,
-        uint8 protocolSwapFee,
-        uint8 protocolWithdrawFee
-    );
+    event ProtocolFeeUpdated(PoolId indexed id, uint24 protocolFees);
 
-    event HookFeeUpdated(
-        PoolId indexed id,
-        uint8 hookSwapFee,
-        uint8 hookWithdrawFee
-    );
+    event HookFeeUpdated(PoolId indexed id, uint24 hookFees);
 
     /// @notice Returns the constant representing the maximum tickSpacing for an initialized pool key
     function MAX_TICK_SPACING() external view returns (int24);
@@ -109,10 +101,8 @@ interface IPoolManager is IFees, IERC1155 {
         returns (
             uint160 sqrtPriceX96,
             int24 tick,
-            uint8 protocolSwapFee,
-            uint8 protocolWithdrawFee,
-            uint8 hookSwapFee,
-            uint8 hookWithdrawFee
+            uint24 protocolFees,
+            uint24 hookFees
         );
 
     /// @notice Get the current value of liquidity of the given pool
@@ -138,8 +128,7 @@ interface IPoolManager is IFees, IERC1155 {
     function reservesOf(Currency currency) external view returns (uint256);
 
     /// @notice Contains data about pool lockers.
-    /// @dev Located in transient storage.
-    struct LockSentinel {
+    struct LockData {
         /// @notice The current number of active lockers
         uint128 length;
         /// @notice The total number of nonzero deltas over all active + completed lockers
@@ -148,6 +137,12 @@ interface IPoolManager is IFees, IERC1155 {
 
     /// @notice Returns the locker in the ith position of the locker queue.
     function getLock(uint256 i) external view returns (address locker);
+
+    /// @notice Returns lock data
+    function lockData()
+        external
+        view
+        returns (uint128 length, uint128 nonzeroDeltaCount);
 
     /// @notice Initialize the state for a given pool ID
     function initialize(

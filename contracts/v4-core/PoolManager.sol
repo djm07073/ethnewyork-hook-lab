@@ -21,10 +21,8 @@ import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 import {BalanceDelta} from "../types/BalanceDelta.sol";
-import {PoolKey} from "../types/PoolKey.sol";
 
 /// @notice Holds the state for all pools
-
 contract PoolManager is
     IPoolManager,
     Fees,
@@ -38,6 +36,7 @@ contract PoolManager is
     using Hooks for IHooks;
     using Position for mapping(bytes32 => Position.Info);
     using CurrencyLibrary for Currency;
+    using LockDataLibrary for IPoolManager.LockData;
     using FeeLibrary for uint24;
 
     /// @inheritdoc IPoolManager
@@ -45,6 +44,9 @@ contract PoolManager is
 
     /// @inheritdoc IPoolManager
     int24 public constant override MIN_TICK_SPACING = 1;
+
+    /// @inheritdoc IPoolManager
+    IPoolManager.LockData public override lockData;
 
     /// @dev Represents the currencies due/owed to each locker.
     /// Must all net to zero when the last lock is released.
@@ -76,10 +78,8 @@ contract PoolManager is
         returns (
             uint160 sqrtPriceX96,
             int24 tick,
-            uint8 protocolSwapFee,
-            uint8 protocolWithdrawFee,
-            uint8 hookSwapFee,
-            uint8 hookWithdrawFee
+            uint24 protocolFees,
+            uint24 hookFees
         )
     {
         Pool.Slot0 memory slot0 = pools[id].slot0;
@@ -87,10 +87,8 @@ contract PoolManager is
         return (
             slot0.sqrtPriceX96,
             slot0.tick,
-            slot0.protocolSwapFee,
-            slot0.protocolWithdrawFee,
-            slot0.hookSwapFee,
-            slot0.hookWithdrawFee
+            slot0.protocolFees,
+            slot0.hookFees
         );
     }
 
@@ -157,17 +155,9 @@ contract PoolManager is
         }
 
         PoolId id = key.toId();
-        (uint8 protocolSwapFee, uint8 protocolWithdrawFee) = _fetchProtocolFees(
-            key
-        );
-        (uint8 hookSwapFee, uint8 hookWithdrawFee) = _fetchHookFees(key);
-        tick = pools[id].initialize(
-            sqrtPriceX96,
-            protocolSwapFee,
-            hookSwapFee,
-            protocolWithdrawFee,
-            hookWithdrawFee
-        );
+        uint24 protocolFees = _fetchProtocolFees(key);
+        uint24 hookFees = _fetchHookFees(key);
+        tick = pools[id].initialize(sqrtPriceX96, protocolFees, hookFees);
 
         if (key.hooks.shouldCallAfterInitialize()) {
             if (
@@ -197,34 +187,31 @@ contract PoolManager is
     function lock(
         bytes calldata data
     ) external override returns (bytes memory result) {
-        LockDataLibrary.push(msg.sender);
+        lockData.push(msg.sender);
 
         // the caller does everything in this callback, including paying what they owe via calls to settle
         result = ILockCallback(msg.sender).lockAcquired(data);
 
-        IPoolManager.LockSentinel memory sentinel = LockDataLibrary
-            .getLockSentinel();
-
-        if (sentinel.length == 1) {
-            if (sentinel.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
-            delete sentinel; // can remove w transient storage
+        if (lockData.length == 1) {
+            if (lockData.nonzeroDeltaCount != 0) revert CurrencyNotSettled();
+            delete lockData;
         } else {
-            LockDataLibrary.pop();
+            lockData.pop();
         }
     }
 
     function _accountDelta(Currency currency, int128 delta) internal {
         if (delta == 0) return;
 
-        address locker = LockDataLibrary.getActiveLock();
+        address locker = lockData.getActiveLock();
         int256 current = currencyDelta[locker][currency];
         int256 next = current + delta;
 
         unchecked {
             if (next == 0) {
-                LockDataLibrary.decreaseDeltaCount();
+                lockData.nonzeroDeltaCount--;
             } else if (current == 0) {
-                LockDataLibrary.increaseDeltaCount();
+                lockData.nonzeroDeltaCount++;
             }
         }
 
@@ -241,7 +228,7 @@ contract PoolManager is
     }
 
     modifier onlyByLocker() {
-        address locker = LockDataLibrary.getActiveLock();
+        address locker = lockData.getActiveLock();
         if (msg.sender != locker) revert LockedBy(locker);
         _;
     }
@@ -534,20 +521,17 @@ contract PoolManager is
     }
 
     function setProtocolFees(PoolKey memory key) external {
-        (
-            uint8 newProtocolSwapFee,
-            uint8 newProtocolWithdrawFee
-        ) = _fetchProtocolFees(key);
+        uint24 newProtocolFees = _fetchProtocolFees(key);
         PoolId id = key.toId();
-        pools[id].setProtocolFees(newProtocolSwapFee, newProtocolWithdrawFee);
-        emit ProtocolFeeUpdated(id, newProtocolSwapFee, newProtocolWithdrawFee);
+        pools[id].setProtocolFees(newProtocolFees);
+        emit ProtocolFeeUpdated(id, newProtocolFees);
     }
 
     function setHookFees(PoolKey memory key) external {
-        (uint8 newHookSwapFee, uint8 newHookWithdrawFee) = _fetchHookFees(key);
+        uint24 newHookFees = _fetchHookFees(key);
         PoolId id = key.toId();
-        pools[id].setHookFees(newHookSwapFee, newHookWithdrawFee);
-        emit HookFeeUpdated(id, newHookSwapFee, newHookWithdrawFee);
+        pools[id].setHookFees(newHookFees);
+        emit HookFeeUpdated(id, newHookFees);
     }
 
     function extsload(bytes32 slot) external view returns (bytes32 value) {

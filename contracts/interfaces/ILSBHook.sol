@@ -5,7 +5,7 @@ import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 
-interface IToasterHook {
+interface ILSBHook {
     /******* ERROR *******/
     error PoolNotInitialized();
     error TickSpacingNotDefault();
@@ -14,6 +14,7 @@ interface IToasterHook {
     error ExpiredPastDeadline();
     error TooMuchSlippage();
     error WrongSwap();
+    error NotOwner();
     /******* EVENT *******/
     event AddLiquidity(
         address indexed sender,

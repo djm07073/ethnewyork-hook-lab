@@ -5,20 +5,21 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import {PoolId} from "../types/PoolId.sol";
 
 /**
- * @title Toaster Finance Hook's ERC1155
- * @author Toaster Finance
+ * @title LSB Finance Hook's ERC1155
+ * @author LSB Finance
  * @notice ERC1155 designed by role of blocking liquidity snipping
  */
-contract ToasterERC1155 is ERC1155, Ownable {
+contract LSBERC1155 is ERC1155, Ownable {
     struct Position {
         uint blockTime;
         int24 tickLower;
         int24 tickUpper;
     }
 
-    uint8 public immutable interval;
+    uint256 public immutable basicInterval;
     int24 public immutable tickSpacing;
     PoolId public immutable poolid;
+    mapping(address => uint) public lockUp;
     mapping(address => uint[]) tokenIdList;
     mapping(int24 => uint) supplyInfo;
     mapping(uint => Position) public positions;
@@ -26,11 +27,11 @@ contract ToasterERC1155 is ERC1155, Ownable {
 
     constructor(
         string memory uri_,
-        uint8 _interval,
+        uint256 _interval,
         int24 _tickSpacing,
         PoolId _poolid
     ) ERC1155(uri_) Ownable() {
-        interval = _interval;
+        basicInterval = _interval;
         tickSpacing = _tickSpacing;
         poolid = _poolid;
     }
@@ -50,11 +51,12 @@ contract ToasterERC1155 is ERC1155, Ownable {
         positions[id] = position;
         updateSupply(amount, tickLower, tickUpper, true);
         tokenIdList[account].push(id);
+        lockUp[account] = basicInterval * (amount / 1e19);
         _mint(account, id, amount, "");
     }
 
     function burn(address account, uint256 id, uint256 amount) external {
-        blockLiquiditySnipping(id);
+        blockLiquiditySnipping(account, id);
         Position memory position = positions[id];
         updateSupply(amount, position.tickLower, position.tickUpper, false);
         _burn(account, id, amount);
@@ -79,7 +81,7 @@ contract ToasterERC1155 is ERC1155, Ownable {
         uint256 amount,
         bytes memory data
     ) public virtual override {
-        blockLiquiditySnipping(id);
+        blockLiquiditySnipping(from, id);
 
         for (uint i = 0; i < tokenIdList[from].length; i++) {
             if (tokenIdList[from][i] == id) {
@@ -92,9 +94,9 @@ contract ToasterERC1155 is ERC1155, Ownable {
         super.safeTransferFrom(from, to, id, amount, data);
     }
 
-    function blockLiquiditySnipping(uint id) internal view {
+    function blockLiquiditySnipping(address account, uint id) internal view {
         Position memory position = positions[id];
-        if (position.blockTime + interval > block.timestamp) {
+        if (position.blockTime + lockUp[account] > block.timestamp) {
             revert PreventLiquiditySnipping();
         }
     }
