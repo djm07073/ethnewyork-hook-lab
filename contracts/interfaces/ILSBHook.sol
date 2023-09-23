@@ -5,7 +5,7 @@ import {CurrencyLibrary, Currency} from "../types/Currency.sol";
 import {PoolId, PoolIdLibrary} from "../types/PoolId.sol";
 import {PoolKey} from "../types/PoolKey.sol";
 
-interface ILSBHook {
+interface IToasterHook {
     /******* ERROR *******/
     error PoolNotInitialized();
     error TickSpacingNotDefault();

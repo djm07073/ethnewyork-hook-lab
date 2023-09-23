@@ -53,9 +53,22 @@ library Hooks {
             calls.afterInitialize, //false
             shouldCallAfterInitialize(self)
         );
-
         console.log(
-            calls.afterDonate, //false
+            calls.beforeModifyPosition,
+            shouldCallBeforeModifyPosition(self),
+            calls.afterModifyPosition,
+            shouldCallAfterModifyPosition(self)
+        );
+        console.log(
+            calls.beforeSwap,
+            shouldCallBeforeSwap(self),
+            calls.afterSwap,
+            shouldCallAfterSwap(self)
+        );
+        console.log(
+            calls.beforeDonate,
+            shouldCallBeforeDonate(self),
+            calls.afterDonate,
             shouldCallAfterDonate(self)
         );
         if (

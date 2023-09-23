@@ -2,7 +2,6 @@
 pragma solidity ^0.8.19;
 
 import {IPoolManager} from "../interfaces/IPoolManager.sol";
-// import {PoolManager} from "../v4-core/PoolManager.sol";
 import {Hooks} from "../libraries/Hooks.sol";
 import {BaseHook} from "../v4-periphery/BaseHook.sol";
 import {SafeCast} from "../libraries/SafeCast.sol";
@@ -17,8 +16,8 @@ import {PoolKey} from "../types/PoolKey.sol";
 import {FullMath} from "../libraries/FullMath.sol";
 import {FixedPoint96} from "../libraries/FixedPoint96.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {ILSBHook} from "../interfaces/ILSBHook.sol";
-import {ToasterERC1155} from "../token/LSBERC1155.sol";
+import {IToasterHook} from "../interfaces/IToasterHook.sol";
+import {ToasterERC1155} from "../token/ToasterERC1155.sol";
 import {LiquidityAmounts} from "../libraries/LiquidityAmounts.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -27,7 +26,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
  * @author Toaster Finance
  * @notice Toaster Finance for Rebalancing & Block Liquidity Snipping
  */
-contract ToasterHook is BaseHook, ILockCallback, ILSBHook, Ownable {
+contract ToasterHook is BaseHook, ILockCallback, IToasterHook, Ownable {
     // using ToasterRebalance for IPoolManager;
     using CurrencyLibrary for Currency;
     using BalanceDeltaLibrary for BalanceDelta;
@@ -35,7 +34,7 @@ contract ToasterHook is BaseHook, ILockCallback, ILSBHook, Ownable {
     using SafeCast for uint256;
     using SafeCast for uint128;
     string public uri;
-    uint8 public interval;
+
     bytes internal constant ZERO_BYTES = bytes("");
     /// @dev Min tick for full range with tick spacing of 60
     int24 internal constant MIN_TICK = -887220;
@@ -72,15 +71,15 @@ contract ToasterHook is BaseHook, ILockCallback, ILSBHook, Ownable {
         address,
         PoolKey calldata key,
         uint160,
-        bytes calldata
+        bytes calldata hookData
     ) external override returns (bytes4) {
         if (key.tickSpacing != int24(key.fee / 50))
             revert TickSpacingNotDefault();
 
         PoolId poolId = key.toId();
-
+        uint8 basicInterval = abi.decode(hookData, (uint8));
         address poolToken = address(
-            new ToasterERC1155(uri, interval, key.tickSpacing, poolId)
+            new ToasterERC1155(uri, basicInterval, key.tickSpacing, poolId)
         );
 
         poolInfo[poolId] = PoolInfo({
@@ -176,6 +175,11 @@ contract ToasterHook is BaseHook, ILockCallback, ILSBHook, Ownable {
         if (amount0 < params.amount0Min || amount1 < params.amount1Min) {
             revert TooMuchSlippage();
         }
+
+        uint256 ethBalance = address(this).balance;
+        if (ethBalance > 0) {
+            CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
+        }
     }
 
     function removeLiquidity(
@@ -215,6 +219,11 @@ contract ToasterHook is BaseHook, ILockCallback, ILSBHook, Ownable {
             amount1,
             params.liquidity
         );
+
+        uint256 ethBalance = address(this).balance;
+        if (ethBalance > 0) {
+            CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
+        }
     }
 
     /**** Swap ****/
@@ -260,6 +269,11 @@ contract ToasterHook is BaseHook, ILockCallback, ILSBHook, Ownable {
             ? uint(uint128(-delta.amount1()))
             : uint(uint128(-delta.amount0()));
         if (amountOut < params.amountOutMinimum) revert TooMuchSlippage();
+
+        uint256 ethBalance = address(this).balance;
+        if (ethBalance > 0) {
+            CurrencyLibrary.NATIVE.transfer(msg.sender, ethBalance);
+        }
     }
 
     /**** Internal Function ****/
@@ -448,9 +462,6 @@ contract ToasterHook is BaseHook, ILockCallback, ILSBHook, Ownable {
     }
 
     /**** Config Function ****/
-    function setInterval(uint8 _interval) external onlyOwner {
-        interval = _interval;
-    }
 
     function setUri(string memory _uri) external onlyOwner {
         uri = _uri;

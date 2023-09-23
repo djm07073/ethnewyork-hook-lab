@@ -16,22 +16,21 @@ contract ToasterERC1155 is ERC1155, Ownable {
         int24 tickUpper;
     }
 
-    uint8 public immutable basicInterval;
+    uint8 public immutable interval;
     int24 public immutable tickSpacing;
     PoolId public immutable poolid;
-    mapping(address => uint[]) public tokenIdList;
-    mapping(address => uint) public lock;
-    mapping(int24 => uint) public supplyInfo;
+    mapping(address => uint[]) tokenIdList;
+    mapping(int24 => uint) supplyInfo;
     mapping(uint => Position) public positions;
     error PreventLiquiditySnipping();
 
     constructor(
         string memory uri_,
-        uint8 _basicInterval,
+        uint8 _interval,
         int24 _tickSpacing,
         PoolId _poolid
     ) ERC1155(uri_) Ownable() {
-        basicInterval = _basicInterval;
+        interval = _interval;
         tickSpacing = _tickSpacing;
         poolid = _poolid;
     }
@@ -51,12 +50,11 @@ contract ToasterERC1155 is ERC1155, Ownable {
         positions[id] = position;
         updateSupply(amount, tickLower, tickUpper, true);
         tokenIdList[account].push(id);
-        lock[account] = basicInterval * (amount / 1e4);
         _mint(account, id, amount, "");
     }
 
     function burn(address account, uint256 id, uint256 amount) external {
-        blockLiquiditySnipping(account, id);
+        blockLiquiditySnipping(id);
         Position memory position = positions[id];
         updateSupply(amount, position.tickLower, position.tickUpper, false);
         _burn(account, id, amount);
@@ -81,7 +79,7 @@ contract ToasterERC1155 is ERC1155, Ownable {
         uint256 amount,
         bytes memory data
     ) public virtual override {
-        blockLiquiditySnipping(from, id);
+        blockLiquiditySnipping(id);
 
         for (uint i = 0; i < tokenIdList[from].length; i++) {
             if (tokenIdList[from][i] == id) {
@@ -94,10 +92,9 @@ contract ToasterERC1155 is ERC1155, Ownable {
         super.safeTransferFrom(from, to, id, amount, data);
     }
 
-    function blockLiquiditySnipping(address account, uint id) internal view {
+    function blockLiquiditySnipping(uint id) internal view {
         Position memory position = positions[id];
-
-        if (position.blockTime + lock[account] > block.timestamp) {
+        if (position.blockTime + interval > block.timestamp) {
             revert PreventLiquiditySnipping();
         }
     }

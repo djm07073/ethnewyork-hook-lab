@@ -12,9 +12,7 @@
 
 ## How can we solve it?
 
--
-
-- We use LP tokens as proof of liquidity. However, this LP Token is minted with an id determined by keccack256 (blockTime, tickLower, tickUpper). And the lockup period is determined at the same time as minting, so that users who have already invested do not feel deprived.
+- We use LP ERC1155 tokens as proof of liquidity. However, this LP Token is minted with an id determined by keccack256 (blockTime, tickLower, tickUpper). And the lockup period is determined at the same time as minting, so that users who have already invested do not feel deprived.
 
 ```
     struct Position {
@@ -38,3 +36,5 @@
     }
 
 ```
+
+-
