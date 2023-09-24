@@ -82,35 +82,7 @@ $$
 
 ## How can we solve it in code?
 
-- I needed to look up information about the pool to redistribute the amount of tokens and wrote the following code to get information about the ticks
-
-```
-    function getStateSlot(PoolId poolId) private pure returns (bytes32) {
-        return keccak256(abi.encodePacked(poolId, POOLS_SLOT));
-    }
-    function getTickBitmapSlot(PoolId poolId) private pure returns (bytes32) {
-        bytes32 stateSlot = getStateSlot(poolId);
-        return bytes32(uint256(stateSlot) + BITMAP);
-    }
-    function getTicksSlot(PoolId poolId) private pure returns (bytes32) {
-        bytes32 stateSlot = getStateSlot(poolId);
-        return bytes32(uint256(stateSlot) + TICKS);
-    }
-```
-
-- (Digression) I'm trying to create ticklens after ETH New York
-
-- I then created a function that could take the information about the tick from above and use it to simulate a crossTick. With this, I created the Rebalance library to help redistribute the amount of tokens.
-
-```
-function crossTicks(
-        IPoolManager self,
-        PoolId poolId,
-        SwapState memory state,
-        uint160 sqrtPriceX96,
-        bool zeroForOne
-    ) private view
-```
+1. LSB- Hook Design
 
 - I use LP ERC1155 tokens as proof of liquidity. However, this LP Token is minted with an id determined by keccack256 (blockTime, tickLower, tickUpper). And the lockup period is determined at the same time as minting, so that users who have already invested do not feel deprived.
 
@@ -156,6 +128,40 @@ function mint(
         _mint(account, id, amount, "");
     }
 ```
+
+2.  Rebalancing Library
+
+- I needed to look up information about the pool to redistribute the amount of tokens and wrote the following code to get information about the ticks
+
+```
+    function getStateSlot(PoolId poolId) private pure returns (bytes32) {
+        return keccak256(abi.encodePacked(poolId, POOLS_SLOT));
+    }
+    function getTickBitmapSlot(PoolId poolId) private pure returns (bytes32) {
+        bytes32 stateSlot = getStateSlot(poolId);
+        return bytes32(uint256(stateSlot) + BITMAP);
+    }
+    function getTicksSlot(PoolId poolId) private pure returns (bytes32) {
+        bytes32 stateSlot = getStateSlot(poolId);
+        return bytes32(uint256(stateSlot) + TICKS);
+    }
+```
+
+- (Digression) I'm trying to create ticklens after ETH New York
+
+- I then created a function that could take the information about the tick from above and use it to simulate a crossTick. With this, I created the Rebalance library to help redistribute the amount of tokens.
+
+```
+function crossTicks(
+        IPoolManager self,
+        PoolId poolId,
+        SwapState memory state,
+        uint160 sqrtPriceX96,
+        bool zeroForOne
+    ) private view
+```
+
+3. QuoterV4
 
 - You can do this by virtually running the simulation in a try - catch fashion, as we did in V3. However, since this is V4, the parameters are slightly different.
 
