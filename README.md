@@ -37,30 +37,36 @@
 
 ## Mathematical formulas in the Rebalancing library
 
-1. **Decide Swap Direction**
+### 1. **Decide Swap Direction**
 
    - In uniswap v3 core whitepaper(6.29,6.30) formula
    - If L0 is greater than L1, then token 0 should be swapped and vice versa.
    - Therefore, by comparing the amounts of L0 and L1, we can determine whether to swap token 0 or token 1 to meet the liquidity supply ratio.
 
-2. **Find Liquidity to Swap**
+### 2. **Find Liquidity to Swap**
    - Assume that there is a final price (the price at which you max out the liquidity supply). There probably is.
    - L is all liquidity in the range defined by the user.
    - if swap from toke0 to token1,
 
-- $$
+$$
    A_0 \rightarrow A_0 - \frac{L}{1-f}\left(\frac{1}{\sqrt{P_{next}}} - \frac{1}{\sqrt{P}}\right)
-  $$
-- $$
+$$
+
+  
+$$
     A_1 \rightarrow A_1 + L\left(\sqrt{P} - \sqrt{P_{next}}\right)
-  $$
+$$
+
 - Therefore, if the final price exists and we know it, we will know how much to swap in reverse.
 
-3. **Derive the quadratic equation from the equations for the liquidity of token 0 and token 1 then finally get final Price that mean meet the liquidity supply ratio with maximum liquidity**
-   $$
-      \frac{A_0 - \frac{L}{1-fee}\left(\frac{1}{\sqrt {P_f}} - \frac{1}{\sqrt P}\right)}{\frac{1}{\sqrt{P_f}} - \frac{1}{\sqrt{P_U}}} = \frac{A_1 + L\left(\sqrt{P} - \sqrt{P_f}\right)}{\sqrt{P_f} - \sqrt{P_L}}
-   $$
-   If we clean up the above equation, we get the coefficients as shown below.
+### 3. **Derive the quadratic equation from the equations for the liquidity of token 0 and token 1 then finally get final Price that mean meet the liquidity supply ratio with maximum liquidity**
+
+
+$$
+\frac{A_0 - \frac{L}{1-fee}\left(\frac{1}{\sqrt {P_f}} - \frac{1}{\sqrt P}\right)}{\frac{1}{\sqrt{P_f}} - \frac{1}{\sqrt{P_U}}} = \frac{A_1 + L\left(\sqrt{P} - \sqrt{P_f}\right)}{\sqrt{P_f} - \sqrt{P_L}}
+$$
+
+If we clean up the above equation, we get the coefficients as shown below.
 
 $$
 a = A_0 + \frac{L}{(1-fee)\sqrt P} - \frac{L}{\sqrt{P_U}}
@@ -82,7 +88,7 @@ $$
 
 ## How can we solve it in code?
 
-1. LSB- Hook Design
+### 1. LSB- Hook Design
 
 - I use LP ERC1155 tokens as proof of liquidity. However, this LP Token is minted with an id determined by keccack256 (blockTime, tickLower, tickUpper). And the lockup period is determined at the same time as minting, so that users who have already invested do not feel deprived.
 
@@ -129,7 +135,7 @@ function mint(
     }
 ```
 
-2.  Rebalancing Library
+### 2.  Rebalancing Library
 
 - I needed to look up information about the pool to redistribute the amount of tokens and wrote the following code to get information about the ticks
 
@@ -161,7 +167,7 @@ function crossTicks(
     ) private view
 ```
 
-3. QuoterV4
+### 3. QuoterV4
 
 - You can do this by virtually running the simulation in a try - catch fashion, as we did in V3. However, since this is V4, the parameters are slightly different.
 
