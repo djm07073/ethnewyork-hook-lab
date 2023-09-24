@@ -23,10 +23,12 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
+      enableTransientStorage: true,
+      allowUnlimitedContractSize: true,
       accounts: [
         { privateKey: PK, balance: "1000000000000000000000000000000000" },
       ],
-      allowUnlimitedContractSize: true,
+
       // forking: {
       //   url: "https://1rpc.io/scroll/sepolia",
       //   blockNumber: 994816,

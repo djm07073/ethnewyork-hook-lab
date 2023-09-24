@@ -1,5 +1,4 @@
 import { expect } from "chai";
-import { CONFIG } from "../config/config";
 import { deployHooks } from "../scripts/deployHooks";
 import { IPoolManager, MockToken } from "../typechain-types";
 

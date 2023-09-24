@@ -117,7 +117,7 @@ library RebalanceV4 {
 
         PoolId id = key.toId();
 
-        (state.sqrtPriceX96, state.tick, , ) = self.getSlot0(id);
+        (state.sqrtPriceX96, state.tick, , , , ) = self.getSlot0(id);
         state.liquidity = self.getLiquidity(id);
 
         state.amount0Desired = amount0Desired;

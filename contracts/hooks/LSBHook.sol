@@ -141,7 +141,7 @@ contract LSBHook is BaseHook, ILockCallback, ILSBHook {
 
         PoolId poolId = key.toId();
 
-        (uint160 sqrtPriceX96, , , ) = poolManager.getSlot0(poolId);
+        (uint160 sqrtPriceX96, , , , , ) = poolManager.getSlot0(poolId);
 
         if (sqrtPriceX96 == 0) revert PoolNotInitialized();
 
