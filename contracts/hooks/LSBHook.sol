@@ -104,7 +104,7 @@ contract LSBHook is BaseHook, ILockCallback, ILSBHook {
         address sender,
         PoolKey calldata,
         IPoolManager.ModifyPositionParams calldata,
-        bytes calldata
+        bytes calldata hooksData
     ) external view override returns (bytes4) {
         if (sender != address(this)) revert SenderMustBeHook();
 
