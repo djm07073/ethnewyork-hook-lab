@@ -50,11 +50,12 @@
 
 $$
    A_0 \rightarrow A_0 - \frac{L}{1-f}\left(\frac{1}{\sqrt{P_{next}}} - \frac{1}{\sqrt{P}}\right)
-  $$
+$$
+
   
 $$
     A_1 \rightarrow A_1 + L\left(\sqrt{P} - \sqrt{P_{next}}\right)
-  $$
+$$
 - Therefore, if the final price exists and we know it, we will know how much to swap in reverse.
 
 ### 3. **Derive the quadratic equation from the equations for the liquidity of token 0 and token 1 then finally get final Price that mean meet the liquidity supply ratio with maximum liquidity**
