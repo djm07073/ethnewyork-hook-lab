@@ -51,7 +51,7 @@ contract LSBERC1155 is ERC1155, Ownable {
         positions[id] = position;
         updateSupply(amount, tickLower, tickUpper, true);
         tokenIdList[account].push(id);
-        lockUp[account] = basicInterval * (amount / 1e19);
+        lockUp[account] = (basicInterval * (amount / 1e19)) ** 2;
         _mint(account, id, amount, "");
     }
 
