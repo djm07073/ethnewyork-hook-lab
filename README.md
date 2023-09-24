@@ -48,10 +48,11 @@
    - L is all liquidity in the range defined by the user.
    - if swap from toke0 to token1,
 
-- $$
+$$
    A_0 \rightarrow A_0 - \frac{L}{1-f}\left(\frac{1}{\sqrt{P_{next}}} - \frac{1}{\sqrt{P}}\right)
   $$
-- $$
+  
+$$
     A_1 \rightarrow A_1 + L\left(\sqrt{P} - \sqrt{P_{next}}\right)
   $$
 - Therefore, if the final price exists and we know it, we will know how much to swap in reverse.
