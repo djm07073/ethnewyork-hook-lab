@@ -30,23 +30,6 @@ library RebalanceV4 {
     using SafeCast for int256;
     using SafeCast for uint256;
 
-    // mapping(address locker => mapping(Currency currency => int256 currencyDelta))
-    //     public currencyDelta; // slot0
-
-    // /// @inheritdoc IPoolManager
-    // mapping(Currency currency => uint256) public override reservesOf;//slot1
-
-    // mapping(PoolId id => Pool.State) public pools; // slot2
-
-    // struct State {
-    //    Slot0 slot0; // first slot
-    //    uint256 feeGrowthGlobal0X128; // second slot
-    //    uint256 feeGrowthGlobal1X128; // third slot
-    //    uint128 liquidity; // fourth slot
-    //    mapping(int24 => TickInfo) ticks; // fifth slot
-    //    mapping(int16 => uint256) tickBitmap; // sixth slot
-    //    mapping(bytes32 => Position.Info) positions; //seventh slot
-    //}
     uint256 internal constant MAX_FEE_PIPS = 1e6;
     uint256 internal constant POOLS_SLOT = 2;
     uint256 internal constant TICKS = 4;
