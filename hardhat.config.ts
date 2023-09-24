@@ -46,10 +46,6 @@ const config: HardhatUserConfig = {
       chainId: 534351,
       url: "https://1rpc.io/scroll/sepolia",
     },
-    mantle_test: {
-      chainId: 5001,
-      url: "https://rpc.testnet.mantle.xyz",
-    },
   },
 };
 

@@ -10,7 +10,6 @@ export const deployHooks = async (
   prefix: string
 ) => {
   let expectedAddress = "";
-  let found = false; // 발견 여부를 나타내는 플래그
 
   for (let salt = 0; salt < 1000; salt++) {
     expectedAddress = await hookDeployer.getPrecomputedHookAddress(
@@ -20,21 +19,15 @@ export const deployHooks = async (
     );
 
     if (_doesAddressStartWith(BigInt(expectedAddress), BigInt(prefix))) {
-      // if (!found) {
-      // 아직 발견된 주소가 없으면
       await hookDeployer
         .deploy(owner, poolManager, ethers.encodeBytes32String(salt.toString()))
         .then((tx) => tx.wait());
 
       console.log("Salt:", salt);
       console.log("Address:", expectedAddress);
-      // found = true; // 발견 플래그를 설정하여 중복 주소 생성 방지
+
       break;
     }
-
-    // if (found) {
-    //   break; // 발견 후에는 루프를 종료
-    // }
   }
 
   return expectedAddress;
